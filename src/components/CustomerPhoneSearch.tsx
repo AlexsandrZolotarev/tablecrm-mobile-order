@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Customer } from "../types/tablecrm";
-import { searchCustomerByName } from "../api/tablecrmApi";
+import { searchCustomerByPhone } from "../api/tablecrmApi";
 
 interface Props {
   token: string;
@@ -20,7 +20,7 @@ export const CustomerPhoneSearch: React.FC<Props> = ({
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const list = await searchCustomerByName(token, query.trim());
+      const list = await searchCustomerByPhone(token, query.trim());
 
       if (list.length === 0) {
         alert("Контрагенты не найдены");
@@ -41,13 +41,18 @@ export const CustomerPhoneSearch: React.FC<Props> = ({
   return (
     <div className="order-page__section order-page__section--customer">
       <div className="order-page__field">
-        <label className="order-page__label">Контрагент (поиск по имени)</label>
+        <label className="order-page__label">
+          Контрагент (поиск по телефону)
+        </label>
         <div className="order-page__row">
           <input
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="order-page__input"
+            placeholder="Телефон клиента"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Введите имя"
+            onChange={(e) => setQuery(e.target.value.replace(/\D/g, ""))}
           />
           <button
             type="button"
