@@ -1,0 +1,15 @@
+@use "./helpers" as *;
+
+:root {
+  --bg-color: #f3f2f9;
+  --color-light: white;
+  --color-black-50: #252532;
+  --color-success: #00c566;
+  --color-error: #ff4747;
+  --color-warning: #facc15;
+  --font-family-base: "Chakra Petch", sans-serif;
+  --container-width: #{rem(1980)};
+  --container-padding-x: #{rem(100)};
+  --transition-duration: 0.2s;
+  --transition: all 2s ease;
+}

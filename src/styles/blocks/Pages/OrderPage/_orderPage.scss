@@ -1,0 +1,171 @@
+@use "../../../helpers/" as *;
+.order-page {
+  min-height: 100vh;
+  padding: 16px;
+  box-sizing: border-box;
+  background: #f5f5f8;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  &__card {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px 16px 24px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+  }
+
+  &__input,
+  &__select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    outline: none;
+    background-color: #ffffff;
+  }
+
+  &__input:focus,
+  &__select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
+  }
+
+  &__row {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+
+    &--full {
+      width: 100%;
+    }
+
+    &--primary {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+
+    &--secondary {
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    &--icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+    }
+  }
+
+  &__hint {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  &__products-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__product {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background-color: #f9fafb;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__product-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &__product-price {
+    font-size: 13px;
+    color: #4b5563;
+  }
+
+  &__qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__qty {
+    min-width: 20px;
+    text-align: center;
+  }
+
+  &__summary {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__summary-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+
+  &__summary-value {
+    font-weight: 600;
+  }
+
+  &__actions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
