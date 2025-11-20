@@ -50,9 +50,8 @@ export const ProductsPicker: React.FC<Props> = ({
     for (const p of allProducts) {
       if (!p.name) continue;
       if (!p.name.toLowerCase().includes(q)) continue;
-
       result.push(p);
-      if (result.length >= 20) break;
+      if (result.length >= 5) break;
     }
     return result;
   }, [allProducts, hasLoaded, query]);

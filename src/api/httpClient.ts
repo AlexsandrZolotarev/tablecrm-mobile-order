@@ -1,60 +1,33 @@
-
 const API_BASE_URL = "https://app.tablecrm.com/api/v1";
 
-type HttpMethod = "GET" | "POST";
+export async function get<T>(
+  path: string,
+  params: Record<string, any>
+): Promise<T> {
+  const url = new URL(`${API_BASE_URL}${path}`);
+  Object.entries(params).forEach(([k, v]) =>
+    url.searchParams.append(k, String(v))
+  );
 
-function buildUrl(path: string, params?: Record<string, unknown>): string {
-  const url = new URL(API_BASE_URL + path);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        url.searchParams.set(key, String(value));
-      }
-    });
-  }
-  return url.toString();
+  const res = await fetch(url.toString());
+  return res.json();
 }
 
-async function request<T>(
-  method: HttpMethod,
+export async function post<T>(
   path: string,
-  options?: {
-    params?: Record<string, unknown>;
-    body?: unknown;
-  }
+  body: any,
+  params: Record<string, any>
 ): Promise<T> {
-  const url = buildUrl(path, options?.params);
+  const url = new URL(`${API_BASE_URL}${path}`);
+  Object.entries(params).forEach(([k, v]) =>
+    url.searchParams.append(k, String(v))
+  );
 
-  const res = await fetch(url, {
-    method,
-    headers:
-      method === "POST"
-        ? {
-            "Content-Type": "application/json",
-          }
-        : undefined,
-    body: method === "POST" ? JSON.stringify(options?.body ?? {}) : undefined,
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status}: ${text}`);
-  }
-
-  return (await res.json()) as T;
-}
-
-export function get<T>(
-  path: string,
-  params?: Record<string, unknown>
-): Promise<T> {
-  return request<T>("GET", path, { params });
-}
-
-export function post<T>(
-  path: string,
-  body: unknown,
-  params?: Record<string, unknown>
-): Promise<T> {
-  return request<T>("POST", path, { params, body });
+  return res.json();
 }
