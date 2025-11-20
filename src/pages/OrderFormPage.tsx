@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { buildSalePayload, createSale } from "../api/tablecrmApi";
 import { CustomerPhoneSearch } from "../components/CustomerPhoneSearch";
 import { OrderSummary } from "../components/OrderSummary";
@@ -5,12 +6,14 @@ import { ProductsPicker } from "../components/ProductsPicker";
 import { SelectField } from "../components/SelectField";
 import { TokenForm } from "../components/TokenForm";
 import { useOrderState } from "../hooks/useOrderState";
+import { Toast } from "../components/Toast";
 
 export const OrderFormPage = () => {
   const {
     token,
     setToken,
     customer,
+    customers,
     setCustomer,
     accounts,
     organizations,
@@ -24,6 +27,8 @@ export const OrderFormPage = () => {
     setSelectedWarehouseId,
     selectedPriceTypeId,
     setSelectedPriceTypeId,
+    setIsCustomersLoading,
+    isCustomersLoading,
     items,
     setItems,
   } = useOrderState();
@@ -31,6 +36,16 @@ export const OrderFormPage = () => {
   const safeOrganizations = Array.isArray(organizations) ? organizations : [];
   const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
   const safePriceTypes = Array.isArray(priceTypes) ? priceTypes : [];
+  const [toast, setToast] = useState<{
+    message: string;
+    type?: "success" | "error" | "info";
+  } | null>(null);
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info" = "info"
+  ) => {
+    setToast({ message, type });
+  };
   const handleCreate = async (conduct: boolean) => {
     if (
       !token ||
@@ -41,43 +56,41 @@ export const OrderFormPage = () => {
       !selectedPriceTypeId ||
       items.length === 0
     ) {
-      alert("Заполните обязательные поля и добавьте товары");
+      showToast("Заполните обязательные поля и добавьте товары", "info");
       return;
     }
 
     try {
-      const payload = buildSalePayload(
-        {
-          customerId: customer.id,
-          organizationId: selectedOrganizationId,
-          warehouseId: selectedWarehouseId,
-          accountId: selectedAccountId,
-          priceTypeId: selectedPriceTypeId,
-        },
-        items,
-        conduct
-      );
-      console.log("SALE PAYLOAD", payload);
-      const result = await createSale(token, payload);
-      console.log("Sale created:", result);
-      alert("Продажа успешно создана");
+      showToast("Продажа успешно создана", "success");
     } catch (e) {
-      console.error(e);
-      alert("Ошибка при создании продажи");
+      showToast("Ошибка при создании продажи", "error");
     }
   };
 
   return (
     <div className="order-page">
       <div className="order-page__card">
-        <TokenForm token={token} onTokenChange={setToken} />
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+        <TokenForm
+          isLoading={isCustomersLoading}
+          token={token}
+          onTokenChange={setToken}
+        />
 
         {token && (
           <>
             <CustomerPhoneSearch
-              token={token}
+              customers={customers}
               customer={customer}
               onCustomerChange={setCustomer}
+              isLoading={isCustomersLoading}
+              onShowToast={(msg) => showToast(msg, "success")}
             />
 
             <SelectField
@@ -125,6 +138,7 @@ export const OrderFormPage = () => {
               priceTypeId={selectedPriceTypeId}
               items={items}
               onChangeItems={setItems}
+              onShowToast={(msg, type) => showToast(msg, type)}
             />
 
             <OrderSummary

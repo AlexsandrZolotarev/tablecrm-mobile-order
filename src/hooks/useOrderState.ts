@@ -12,6 +12,7 @@ import {
   fetchOrganizations,
   fetchPriceTypes,
   fetchWarehouses,
+  searchCustomerByPhone,
 } from "../api/tablecrmApi";
 
 export function useOrderState() {
@@ -19,7 +20,9 @@ export function useOrderState() {
     localStorage.getItem("tablecrm_token")
   );
 
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [isCustomersLoading, setIsCustomersLoading] = useState(false);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -53,6 +56,7 @@ export function useOrderState() {
     if (!token) return;
 
     setLoadingDictionaries(true);
+    setIsCustomersLoading(true);
     setError(null);
 
     Promise.all([
@@ -60,18 +64,22 @@ export function useOrderState() {
       fetchOrganizations(token),
       fetchWarehouses(token),
       fetchPriceTypes(token),
+      searchCustomerByPhone(token),
     ])
-      .then(([payboxes, orgs, warehouses, priceTypes]) => {
+      .then(([payboxes, orgs, warehouses, priceTypes, customers]) => {
         setAccounts(payboxes);
         setOrganizations(orgs);
         setWarehouses(warehouses);
         setPriceTypes(priceTypes);
+        setCustomers(customers);
       })
       .catch((e) => {
-        console.error(e);
         setError("Не удалось загрузить справочники");
       })
-      .finally(() => setLoadingDictionaries(false));
+      .finally(() => {
+        setLoadingDictionaries(false);
+        setIsCustomersLoading(false);
+      });
   }, [token]);
 
   return {
@@ -79,6 +87,9 @@ export function useOrderState() {
     setToken,
     customer,
     setCustomer,
+    customers,
+    isCustomersLoading,
+    setIsCustomersLoading,
     accounts,
     organizations,
     warehouses,

@@ -10,12 +10,10 @@ import type {
 } from "../types/tablecrm";
 
 export async function searchCustomerByPhone(
-  token: string,
-  phone: string
+  token: string
 ): Promise<Customer[]> {
   const raw = await get<any>("/contragents/", {
     token,
-    phone,
   });
   if (raw && Array.isArray(raw.result)) {
     return raw.result as Customer[];

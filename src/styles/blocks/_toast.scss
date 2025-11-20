@@ -1,0 +1,50 @@
+@use "../helpers" as *;
+.toast {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 100;
+  color: #ffffff;
+  opacity: 0;
+  animation: toast-slide 2.6s ease forwards;
+
+  &--success {
+    background-color: #16a34a;
+  }
+
+  &--error {
+    background-color: #dc2626;
+  }
+
+  &--info {
+    background-color: #2563eb;
+  }
+
+  &__icon {
+    font-weight: bold;
+    font-size: 16px;
+  }
+}
+
+@keyframes toast-slide {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  15%,
+  85% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}

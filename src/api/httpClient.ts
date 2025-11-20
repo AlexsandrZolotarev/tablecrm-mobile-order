@@ -1,4 +1,4 @@
-// src/api/httpClient.ts
+
 const API_BASE_URL = "https://app.tablecrm.com/api/v1";
 
 type HttpMethod = "GET" | "POST";

@@ -1,41 +1,44 @@
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { Customer } from "../types/tablecrm";
-import { searchCustomerByPhone } from "../api/tablecrmApi";
 
 interface Props {
-  token: string;
+  customers: Customer[];
   customer: Customer | null;
+  isLoading: boolean;
   onCustomerChange: (c: Customer | null) => void;
+  onShowToast?: (message: string) => void;
 }
 
 export const CustomerPhoneSearch: React.FC<Props> = ({
-  token,
+  customers,
   customer,
   onCustomerChange,
+  isLoading,
+  onShowToast,
 }) => {
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    setLoading(true);
-    try {
-      const list = await searchCustomerByPhone(token, query.trim());
+  const filtered = useMemo(() => {
+    const q = query.trim();
+    if (!q) return customers;
+    return customers.filter((c) => c.phone?.includes(q));
+  }, [customers, query]);
 
-      if (list.length === 0) {
-        alert("Контрагенты не найдены");
-        onCustomerChange(null);
-      } else if (list.length === 1) {
-        onCustomerChange(list[0]);
-      } else {
-        onCustomerChange(list[0]);
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Ошибка поиска контрагента");
-    } finally {
-      setLoading(false);
-    }
+  const handleSelect = (c: Customer) => {
+    setQuery(c.phone ?? "");
+    onCustomerChange(c);
+    setIsOpen(false);
+    onShowToast?.(`Выбран клиент: ${c.name}`);
+  };
+
+  const handleClear = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setQuery("");
+    onCustomerChange(null);
+    setIsOpen(true);
   };
 
   return (
@@ -44,24 +47,62 @@ export const CustomerPhoneSearch: React.FC<Props> = ({
         <label className="order-page__label">
           Контрагент (поиск по телефону)
         </label>
-        <div className="order-page__row">
-          <input
-            type="tel"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            className="order-page__input"
-            placeholder="Телефон клиента"
-            value={query}
-            onChange={(e) => setQuery(e.target.value.replace(/\D/g, ""))}
-          />
-          <button
-            type="button"
-            className="order-page__button order-page__button--secondary"
-            onClick={handleSearch}
-            disabled={loading}
-          >
-            {loading ? "Поиск..." : "Найти"}
-          </button>
+
+        <div className="order-page__customer-select">
+          <div className="order-page__customer-input-wrapper">
+            <input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className="order-page__input order-page__customer-input"
+              placeholder="Введите номер телефона"
+              value={query}
+              onFocus={() => setIsOpen(true)}
+              onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+              onChange={(e) => setQuery(e.target.value.replace(/\D/g, ""))}
+            />
+
+            {query && (
+              <button
+                type="button"
+                className="order-page__customer-clear"
+                onMouseDown={handleClear}
+                aria-label="Очистить номер"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {isLoading ? (
+            <span className="order-page__customer-spinner" />
+          ) : (
+            query && (
+              <button
+                type="button"
+                className="order-page__customer-clear"
+                onMouseDown={handleClear}
+              >
+                ✕
+              </button>
+            )
+          )}
+          {isOpen && filtered.length > 0 && (
+            <ul className="order-page__customer-dropdown">
+              {filtered.map((c) => (
+                <li
+                  key={c.id}
+                  className="order-page__customer-option"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(c);
+                  }}
+                >
+                  <span className="order-page__customer-phone">{c.phone}</span>
+                  <span className="order-page__customer-name"> — {c.name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 

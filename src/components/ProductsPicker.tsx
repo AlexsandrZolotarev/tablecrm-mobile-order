@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { OrderItem } from "../types/tablecrm";
+import React, { useEffect, useMemo, useState } from "react";
+import type { OrderItem, Product } from "../types/tablecrm";
 import { searchProducts, fetchProductPrice } from "../api/tablecrmApi";
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
   priceTypeId: number | null;
   items: OrderItem[];
   onChangeItems: (items: OrderItem[]) => void;
+  onShowToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 export const ProductsPicker: React.FC<Props> = ({
@@ -14,87 +15,102 @@ export const ProductsPicker: React.FC<Props> = ({
   priceTypeId,
   items,
   onChangeItems,
+  onShowToast,
 }) => {
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleAddProduct = async () => {
-    if (!query.trim()) return;
-    setLoading(true);
+  useEffect(() => {
+    if (!token) return;
+
+    setIsLoading(true);
+    searchProducts(token, "")
+      .then((p) => setAllProducts(p))
+      .catch(() => onShowToast?.("Ошибка загрузки товаров", "error"))
+      .finally(() => setIsLoading(false));
+  }, [token]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return allProducts.slice(0, 20);
+
+    return allProducts
+      .filter((p) => typeof p.name === "string")
+      .filter((p) => p.name.toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [allProducts, query]);
+
+  const handleAdd = async (product: Product) => {
     try {
-      const products = await searchProducts(token, query.trim());
-      if (products.length === 0) {
-        alert("Товары не найдены");
-        return;
-      }
+      let price = product.price ?? 0;
 
-      const p = products[0];
-
-      let price = 0;
       if (priceTypeId != null) {
         try {
-          const priceInfo = await fetchProductPrice(token, p.id, priceTypeId);
-          price = priceInfo.price ?? 0;
-        } catch {
-          price = p.price ?? 0;
-        }
-      } else {
-        price = p.price ?? 0;
+          const res = await fetchProductPrice(token, product.id, priceTypeId);
+          price = res.price ?? price;
+        } catch {}
       }
 
       const newItem: OrderItem = {
-        product_id: p.id,
-        name: p.name,
+        product_id: product.id,
+        name: product.name,
         quantity: 1,
-        price,
+        price: price,
         total: price,
       };
 
       onChangeItems([...items, newItem]);
       setQuery("");
+      setIsOpen(false);
     } catch (e) {
-      console.error(e);
-      alert("Ошибка поиска товара");
-    } finally {
-      setLoading(false);
+      onShowToast?.("Ошибка добавления товара", "error");
     }
   };
 
-  const changeQuantity = (id: number, delta: number) => {
-    const updated = items.map((p) =>
-      p.product_id === id
-        ? {
-            ...p,
-            quantity: Math.max(1, p.quantity + delta),
-            total: Math.max(1, p.quantity + delta) * p.price,
-          }
-        : p
-    );
-    onChangeItems(updated);
-  };
-
   return (
-    <div className="order-page__section order-page__section--products">
+    <div className="order-page__section">
       <div className="order-page__field">
         <label className="order-page__label">Поиск товара</label>
-        <div className="order-page__row">
-          <input
-            className="order-page__input"
-            placeholder="Введите название"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <button
-            type="button"
-            className="order-page__button order-page__button--secondary"
-            onClick={handleAddProduct}
-            disabled={loading}
-          >
-            {loading ? "..." : "Добавить"}
-          </button>
+
+        <div className="order-page__product-search">
+          <div className="order-page__product-input-wrapper">
+            <input
+              className="order-page__input order-page__product-input"
+              placeholder="Введите название"
+              value={query}
+              onFocus={() => setIsOpen(true)}
+              onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+
+            {isLoading && <span className="order-page__product-spinner" />}
+          </div>
+
+          {isOpen && filtered.length > 0 && (
+            <div className="order-page__product-dropdown">
+              {filtered.map((p) => (
+                <div key={p.id} className="order-page__product-option">
+                  <div className="order-page__product-option-name">
+                    {p.name}
+                  </div>
+                  <button
+                    type="button"
+                    className="order-page__button order-page__button--secondary order-page__product-add-btn"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleAdd(p);
+                    }}
+                  >
+                    Добавить
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
       <div className="order-page__products-list">
         {items.map((p) => (
           <div key={p.product_id} className="order-page__product">
@@ -107,15 +123,41 @@ export const ProductsPicker: React.FC<Props> = ({
               <button
                 type="button"
                 className="order-page__button order-page__button--icon"
-                onClick={() => changeQuantity(p.product_id, -1)}
+                onClick={() =>
+                  onChangeItems(
+                    items.map((x) =>
+                      x.product_id === p.product_id
+                        ? {
+                            ...x,
+                            quantity: Math.max(1, x.quantity - 1),
+                            total: Math.max(1, x.quantity - 1) * x.price,
+                          }
+                        : x
+                    )
+                  )
+                }
               >
                 −
               </button>
+
               <span className="order-page__qty">{p.quantity}</span>
+
               <button
                 type="button"
                 className="order-page__button order-page__button--icon"
-                onClick={() => changeQuantity(p.product_id, +1)}
+                onClick={() =>
+                  onChangeItems(
+                    items.map((x) =>
+                      x.product_id === p.product_id
+                        ? {
+                            ...x,
+                            quantity: x.quantity + 1,
+                            total: (x.quantity + 1) * x.price,
+                          }
+                        : x
+                    )
+                  )
+                }
               >
                 +
               </button>

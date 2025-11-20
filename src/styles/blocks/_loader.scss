@@ -1,0 +1,21 @@
+@use "../helpers" as *;
+
+.loader {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  top: 7px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #d1d5db;
+  animation: order-page-spin 0.8s linear infinite;
+}
+
+@keyframes order-page-spin {
+  0% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
