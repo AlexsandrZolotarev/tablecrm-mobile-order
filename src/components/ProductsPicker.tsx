@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { OrderItem, Product } from "../types/tablecrm";
 import { searchProducts, fetchProductPrice } from "../api/tablecrmApi";
 
@@ -21,26 +21,41 @@ export const ProductsPicker: React.FC<Props> = ({
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
-  useEffect(() => {
+  const ensureProductsLoaded = async () => {
     if (!token) return;
+    if (hasLoaded || isLoading) return;
 
     setIsLoading(true);
-    searchProducts(token, "")
-      .then((p) => setAllProducts(p))
-      .catch(() => onShowToast?.("Ошибка загрузки товаров", "error"))
-      .finally(() => setIsLoading(false));
-  }, [token]);
+    try {
+      const list = await searchProducts(token, "");
+      setAllProducts(list);
+      setHasLoaded(true);
+    } catch (e) {
+      console.error(e);
+      onShowToast?.("Ошибка загрузки товаров", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return allProducts.slice(0, 20);
+    if (!hasLoaded || !allProducts.length) return [];
 
-    return allProducts
-      .filter((p) => typeof p.name === "string")
-      .filter((p) => p.name.toLowerCase().includes(q))
-      .slice(0, 20);
-  }, [allProducts, query]);
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+
+    const result: Product[] = [];
+    for (const p of allProducts) {
+      if (!p.name) continue;
+      if (!p.name.toLowerCase().includes(q)) continue;
+
+      result.push(p);
+      if (result.length >= 20) break;
+    }
+    return result;
+  }, [allProducts, hasLoaded, query]);
 
   const handleAdd = async (product: Product) => {
     try {
@@ -57,14 +72,16 @@ export const ProductsPicker: React.FC<Props> = ({
         product_id: product.id,
         name: product.name,
         quantity: 1,
-        price: price,
+        price,
         total: price,
       };
 
       onChangeItems([...items, newItem]);
       setQuery("");
       setIsOpen(false);
+      onShowToast?.(`Товар добавлен: ${product.name}`, "success");
     } catch (e) {
+      console.error(e);
       onShowToast?.("Ошибка добавления товара", "error");
     }
   };
@@ -80,13 +97,40 @@ export const ProductsPicker: React.FC<Props> = ({
               className="order-page__input order-page__product-input"
               placeholder="Введите название"
               value={query}
-              onFocus={() => setIsOpen(true)}
-              onBlur={() => setTimeout(() => setIsOpen(false), 150)}
-              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => {
+                setIsOpen(true);
+                void ensureProductsLoaded();
+              }}
+              onChange={(e) => {
+                const v = e.target.value;
+                setQuery(v);
+                if (v.trim().length >= 2) {
+                  void ensureProductsLoaded();
+                }
+              }}
+              onBlur={() => {
+                setTimeout(() => setIsOpen(false), 150);
+              }}
             />
 
             {isLoading && <span className="order-page__product-spinner" />}
           </div>
+
+          {isOpen && query.trim().length < 2 && !isLoading && (
+            <div className="order-page__product-dropdown">
+              <div className="order-page__product-option">
+                Введите хотя бы 2 символа для поиска
+              </div>
+            </div>
+          )}
+
+          {isOpen && !hasLoaded && isLoading && (
+            <div className="order-page__product-dropdown">
+              <div className="order-page__product-option">
+                Загружаем список товаров...
+              </div>
+            </div>
+          )}
 
           {isOpen && filtered.length > 0 && (
             <div className="order-page__product-dropdown">
@@ -100,7 +144,7 @@ export const ProductsPicker: React.FC<Props> = ({
                     className="order-page__button order-page__button--secondary order-page__product-add-btn"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      handleAdd(p);
+                      void handleAdd(p);
                     }}
                   >
                     Добавить
@@ -109,8 +153,21 @@ export const ProductsPicker: React.FC<Props> = ({
               ))}
             </div>
           )}
+
+          {isOpen &&
+            hasLoaded &&
+            !isLoading &&
+            query.trim().length >= 2 &&
+            filtered.length === 0 && (
+              <div className="order-page__product-dropdown">
+                <div className="order-page__product-option">
+                  Ничего не найдено
+                </div>
+              </div>
+            )}
         </div>
       </div>
+
       <div className="order-page__products-list">
         {items.map((p) => (
           <div key={p.product_id} className="order-page__product">
