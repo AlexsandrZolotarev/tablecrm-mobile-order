@@ -73,7 +73,7 @@ export function useOrderState() {
         setPriceTypes(priceTypes);
         setCustomers(customers);
       })
-      .catch((e) => {
+      .catch(() => {
         setError("Не удалось загрузить справочники");
       })
       .finally(() => {

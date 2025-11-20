@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { buildSalePayload, createSale } from "../api/tablecrmApi";
 import { CustomerPhoneSearch } from "../components/CustomerPhoneSearch";
 import { OrderSummary } from "../components/OrderSummary";
 import { ProductsPicker } from "../components/ProductsPicker";
@@ -27,7 +26,6 @@ export const OrderFormPage = () => {
     setSelectedWarehouseId,
     selectedPriceTypeId,
     setSelectedPriceTypeId,
-    setIsCustomersLoading,
     isCustomersLoading,
     items,
     setItems,
@@ -47,6 +45,7 @@ export const OrderFormPage = () => {
     setToast({ message, type });
   };
   const handleCreate = async (conduct: boolean) => {
+    console.log("conduct =", conduct);
     if (
       !token ||
       !customer ||
@@ -59,11 +58,10 @@ export const OrderFormPage = () => {
       showToast("Заполните обязательные поля и добавьте товары", "info");
       return;
     }
-
     try {
       showToast("Продажа успешно создана", "success");
     } catch (e) {
-      showToast("Ошибка при создании продажи", "error");
+      showToast("Ошибка при создании продажи" + e, "error");
     }
   };
 
